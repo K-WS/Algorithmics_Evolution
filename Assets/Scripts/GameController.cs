@@ -19,6 +19,11 @@ public class GameController : MonoBehaviour, Observer
     private bool reset;
     private float timeToReset;
 
+    //World info
+    private int radius = 30;
+    public GameObject circleFloor;
+    
+
 
     // Start is called before the first frame update
     void Start()
@@ -30,6 +35,8 @@ public class GameController : MonoBehaviour, Observer
         expendedChars = 0;
         reset = false;
         timeToReset = 0;
+
+        circleFloor.transform.localScale = new Vector3(radius, 0.0001f, radius);
     }
 
     // Update is called once per frame
@@ -59,7 +66,10 @@ public class GameController : MonoBehaviour, Observer
 
         for (int i = 0; i < amount; i++)
         {
-            GameObject prefab = Instantiate(food, new Vector3(Random.Range(-8.5f, 8.5f), 0.5f, Random.Range(-8.5f, 8.5f)), Quaternion.identity);
+            Vector2 area = Random.insideUnitCircle * (radius/2 - 1f);
+            GameObject prefab = Instantiate(food, 
+                                            new Vector3(area.x, 0.5f, area.y), 
+                                            Quaternion.identity);
             prefab.transform.parent = this.transform;
             foodList.Add(prefab);
         }
