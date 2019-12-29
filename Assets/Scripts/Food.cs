@@ -5,18 +5,27 @@ using UnityEngine;
 public class Food : MonoBehaviour
 {
     private GameController parentController;
+    private int quality;
 
     void Start()
     {
         parentController = GetComponentInParent<GameController>();
-    }
+        quality = Random.Range(1,5);
 
+        this.GetComponent<MeshRenderer>().materials[0].color = new Color(
+                                                                        0.8f - 0.15f * (quality-1),
+                                                                        0.62f + 0.02f * (quality-1),
+                                                                        0.016f + 0.08f * (quality-1), 
+                                                                        1f);
+    }
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.gameObject.CompareTag("Player"))
+        if (other.gameObject.CompareTag("Player") && parentController != null)
         {
             other.GetComponentInParent<CharacterMovement>().foodCollected += 1;
+            other.GetComponentInParent<CharacterMovement>().energy += 100f * quality;
+
             parentController.foodList.Remove(gameObject);
             Destroy(gameObject);
         }

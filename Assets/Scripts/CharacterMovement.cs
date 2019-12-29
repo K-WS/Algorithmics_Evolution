@@ -9,8 +9,8 @@ public class CharacterMovement : MonoBehaviour
     //public GameObject character;
     public Subject sub;
     private float speed = 2f;
-    private float energy = 2000f;
-    private float startEnergy = 2000f;
+    public float energy;
+    public float startEnergy;
     public int foodCollected = 0;
 
     public Transform target;
@@ -26,17 +26,13 @@ public class CharacterMovement : MonoBehaviour
     void Start()
     {
         parentController = GetComponentInParent<GameController>();
+        startEnergy = 2000f;
+        energy = 2000f;
     }
 
     // Update is called once per frame
     void Update()
     {
-
-        /*if(foodCollected >= 2)
-        {
-            energy = 0;
-            sub.Notify();
-        }*/
 
         if (active) 
         {
@@ -79,7 +75,7 @@ public class CharacterMovement : MonoBehaviour
             energy -= 1 * speed;
 
             //If energy runs out here, send observation notification
-            if (energy <= 0 || foodCollected >= 2 || parentController.foodList.Count == 0)
+            if (energy <= 0 || parentController.foodList.Count == 0)
             {
                 sub.Notify();
                 active = false;

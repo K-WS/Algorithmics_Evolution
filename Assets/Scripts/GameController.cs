@@ -22,6 +22,9 @@ public class GameController : MonoBehaviour, Observer
     //World info
     private int radius = 30;
     public GameObject circleFloor;
+
+    private float foodTimer;
+    private float foodRespawn;
     
 
 
@@ -35,6 +38,8 @@ public class GameController : MonoBehaviour, Observer
         expendedChars = 0;
         reset = false;
         timeToReset = 0;
+        foodTimer = 0;
+        foodRespawn = Random.Range(2f, 5f);
 
         circleFloor.transform.localScale = new Vector3(radius, 0.0001f, radius);
     }
@@ -42,6 +47,17 @@ public class GameController : MonoBehaviour, Observer
     // Update is called once per frame
     void Update()
     {
+        foodTimer += Time.deltaTime;
+        if(foodTimer >= foodRespawn)
+        {
+            foodRespawn = Random.Range(2f, 5f);
+            foodTimer = 0;
+
+            AddFood(3);
+
+            
+        }
+
         if(reset == true)
         {
             timeToReset += Time.deltaTime;
@@ -64,11 +80,17 @@ public class GameController : MonoBehaviour, Observer
             Destroy(go);  //Destroy leftover food gameobjects
         foodList.Clear(); //Empties all leftover food references in the list.
 
+        AddFood(amount);
+    }
+
+    //Method that, instead of resetting and creating food, only adds a smaller amount
+    private void AddFood(int amount)
+    {
         for (int i = 0; i < amount; i++)
         {
-            Vector2 area = Random.insideUnitCircle * (radius/2 - 1f);
-            GameObject prefab = Instantiate(food, 
-                                            new Vector3(area.x, 0.5f, area.y), 
+            Vector2 area = Random.insideUnitCircle * (radius / 2 - 1f);
+            GameObject prefab = Instantiate(food,
+                                            new Vector3(area.x, 0.5f, area.y),
                                             Quaternion.identity);
             prefab.transform.parent = this.transform;
             foodList.Add(prefab);
