@@ -6,11 +6,13 @@ public class Food : MonoBehaviour
 {
     private GameController parentController;
     private int quality;
+    public bool occupied;
 
     void Start()
     {
         parentController = GetComponentInParent<GameController>();
         quality = Random.Range(1,5);
+        occupied = false;
 
         this.GetComponent<MeshRenderer>().materials[0].color = new Color(
                                                                         0.8f - 0.15f * (quality-1),

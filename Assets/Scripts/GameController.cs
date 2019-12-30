@@ -86,6 +86,7 @@ public class GameController : MonoBehaviour, Observer
     //Method that, instead of resetting and creating food, only adds a smaller amount
     private void AddFood(int amount)
     {
+        //Add the actual food
         for (int i = 0; i < amount; i++)
         {
             Vector2 area = Random.insideUnitCircle * (radius / 2 - 1f);
@@ -94,6 +95,12 @@ public class GameController : MonoBehaviour, Observer
                                             Quaternion.identity);
             prefab.transform.parent = this.transform;
             foodList.Add(prefab);
+        }
+
+        //Notify all players that new food has been created
+        foreach(GameObject character in characterList)
+        {
+            character.GetComponent<CharacterMovement>().DetectFood();
         }
     }
 
