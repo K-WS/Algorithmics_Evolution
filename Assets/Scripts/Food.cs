@@ -6,13 +6,15 @@ public class Food : MonoBehaviour
 {
     private GameController parentController;
     private int quality;
-    public bool occupied;
+    //public bool occupied;
+    public GameObject occupier;
 
     void Start()
     {
         parentController = GetComponentInParent<GameController>();
         quality = Random.Range(1,5);
-        occupied = false;
+        //occupied = false
+        occupier = null;
 
         this.GetComponent<MeshRenderer>().materials[0].color = new Color(
                                                                         0.8f - 0.15f * (quality-1),
@@ -27,6 +29,8 @@ public class Food : MonoBehaviour
         {
             other.GetComponentInParent<CharacterMovement>().foodCollected += 1;
             other.GetComponentInParent<CharacterMovement>().energy += 100f * quality;
+            //This should be a part of mutations, but testing size here
+            other.transform.localScale += new Vector3(0.1f, 0.1f, 0.1f);
 
             parentController.foodList.Remove(gameObject);
             Destroy(gameObject);

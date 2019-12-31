@@ -62,7 +62,7 @@ public class CharacterMovement : MonoBehaviour
                 transform.position += targetDirection.normalized * step;//transform.forward * step;
                 transform.rotation = Quaternion.LookRotation(rotDirection);
 
-                energy -= 1 * speed;
+                energy -= speed * transform.localScale.x;
 
                 //If energy runs out here, send observation notification
                 if (energy <= 0 || parentController.foodList.Count == 0)
@@ -86,7 +86,8 @@ public class CharacterMovement : MonoBehaviour
         //If new food is spawned, make sure to make the old food available first
         if(target != null)
         {
-            target.gameObject.GetComponent<Food>().occupied = false;
+            //target.gameObject.GetComponent<Food>().occupied = false;
+            target.gameObject.GetComponent<Food>().occupier = this.gameObject;
         }
 
         //Find closest food and assign it, if none found, is null
@@ -96,7 +97,13 @@ public class CharacterMovement : MonoBehaviour
 
         foreach (GameObject go in parentController.foodList)
         {
-            if(go.GetComponent<Food>().occupied == false)
+            //General check to see if the food hasn't been occupied
+            //Or if it is and the player is much larger than them
+            //if(go.GetComponent<Food>().occupied == false)
+            if(go.GetComponent<Food>().occupier == null ||
+                go.GetComponent<Food>().occupier != null &&
+                go.GetComponent<Food>().occupier.transform.localScale.x -
+                    gameObject.transform.localScale.x >= 0.5)
             {
                 float dist = Vector3.Distance(go.transform.position, currentPos);
                 if (dist < minDist)
@@ -110,7 +117,12 @@ public class CharacterMovement : MonoBehaviour
 
         if(goMin != null)
         {
-            goMin.GetComponent<Food>().occupied = true;
+            //If food is already occupied, then scare them away.
+            if (goMin.GetComponent<Food>().occupier != null)
+                goMin.GetComponent<Food>().occupier.GetComponent<CharacterMovement>().DetectFood();
+
+            //goMin.GetComponent<Food>().occupied = true;
+            goMin.GetComponent<Food>().occupier = this.gameObject;
             target = goMin.transform;
         }
     }
