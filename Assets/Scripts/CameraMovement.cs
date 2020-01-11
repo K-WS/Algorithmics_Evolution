@@ -9,10 +9,10 @@ using UnityEngine;
 public class CameraMovement : MonoBehaviour
 {
 
-    public float lookSpeedH = 2f;
-    public float lookSpeedV = 2f;
-    public float zoomSpeed = 2f;
-    public float dragSpeed = 6f;
+    private float lookSpeedH = 5f;
+    private float lookSpeedV = 5f;
+    private float zoomSpeed = 10f;
+    private float dragSpeed = 50f;
 
     private float yaw = 0f;
     private float pitch = 0f;

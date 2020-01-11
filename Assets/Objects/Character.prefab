@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 554522144791574476}
   - component: {fileID: 554522144791574464}
   - component: {fileID: 554522144791574465}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Character
   m_TagString: Player
   m_Icon: {fileID: 0}
@@ -124,7 +124,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ceaa465960108dd44bf4488341edb90b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  statter: {fileID: 0}
+  energy: 0
+  startEnergy: 0
   foodCollected: 0
+  foodNeeded: 0
   target: {fileID: 0}
 --- !u!1 &554522144959479512
 GameObject:
@@ -138,7 +142,7 @@ GameObject:
   - component: {fileID: 554522144959479516}
   - component: {fileID: 554522144959479515}
   - component: {fileID: 554522144959479514}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Left Eye
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -230,7 +234,7 @@ GameObject:
   - component: {fileID: 554522145035958979}
   - component: {fileID: 554522145035958978}
   - component: {fileID: 554522145035958977}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Right Eye
   m_TagString: Untagged
   m_Icon: {fileID: 0}

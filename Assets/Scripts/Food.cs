@@ -5,32 +5,59 @@ using UnityEngine;
 public class Food : MonoBehaviour
 {
     private GameController parentController;
-    private int quality;
-    //public bool occupied;
+    public int quality;
     public GameObject occupier;
 
     void Start()
     {
         parentController = GetComponentInParent<GameController>();
-        quality = Random.Range(1,5);
-        //occupied = false
+        quality = Random.Range(1,6);
         occupier = null;
 
-        this.GetComponent<MeshRenderer>().materials[0].color = new Color(
+        /*this.GetComponent<MeshRenderer>().materials[0].color = new Color(
                                                                         0.8f - 0.15f * (quality-1),
                                                                         0.62f + 0.02f * (quality-1),
                                                                         0.016f + 0.08f * (quality-1), 
-                                                                        1f);
+                                                                        1f);*/
+        if (quality == 1)
+            this.GetComponent<MeshRenderer>().materials[0].color = new Color(
+                                                                            0.8f,
+                                                                            0f,
+                                                                            0f,
+                                                                            1);
+        else if (quality == 2)
+            this.GetComponent<MeshRenderer>().materials[0].color = new Color(
+                                                                            0.8f,
+                                                                            0.36f,
+                                                                            0.13f,
+                                                                            1);
+        else if (quality == 3)
+            this.GetComponent<MeshRenderer>().materials[0].color = new Color(
+                                                                            0.8f,
+                                                                            0.72f,
+                                                                            0.13f,
+                                                                            1);
+        else if (quality == 4)
+            this.GetComponent<MeshRenderer>().materials[0].color = new Color(
+                                                                            0.4f,
+                                                                            0.8f,
+                                                                            0.13f,
+                                                                            1);
+        else if (quality == 5)
+            this.GetComponent<MeshRenderer>().materials[0].color = new Color(
+                                                                            0.2f,
+                                                                            0.8f,
+                                                                            0.72f,
+                                                                            1);
+
     }
 
     private void OnTriggerEnter(Collider other)
     {
         if (other.gameObject.CompareTag("Player") && parentController != null)
         {
-            other.GetComponentInParent<CharacterMovement>().foodCollected += 1;
+            other.GetComponentInParent<CharacterMovement>().foodCollected += 0.2f*quality;
             other.GetComponentInParent<CharacterMovement>().energy += 100f * quality;
-            //This should be a part of mutations, but testing size here
-            other.transform.localScale += new Vector3(0.1f, 0.1f, 0.1f);
 
             parentController.foodList.Remove(gameObject);
             Destroy(gameObject);
