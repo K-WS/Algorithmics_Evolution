@@ -6,7 +6,7 @@ public class Food : MonoBehaviour
 {
     private GameController parentController;
     public int quality;
-    public GameObject occupier;
+    private GameObject occupier;
 
     void Start()
     {
@@ -54,7 +54,7 @@ public class Food : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.gameObject.CompareTag("Player") && parentController != null)
+        if (other.gameObject.CompareTag("Player") && parentController != null && other.gameObject == occupier)
         {
             other.GetComponentInParent<CharacterMovement>().foodCollected += 0.2f*quality;
             other.GetComponentInParent<CharacterMovement>().energy += 100f * quality;
@@ -62,6 +62,38 @@ public class Food : MonoBehaviour
             parentController.foodList.Remove(gameObject);
             Destroy(gameObject);
         }
-        
+        else if(other.gameObject != occupier)
+        {
+            Debug.Log("Not the right person to collide in");
+        }
+    }
+
+    /*private void OnTriggerExit(Collider other)
+    {
+        if (other.gameObject.CompareTag("Player") && parentController != null && other.gameObject == occupier)
+        {
+            other.GetComponentInParent<CharacterMovement>().foodCollected += 0.2f * quality;
+            other.GetComponentInParent<CharacterMovement>().energy += 100f * quality;
+
+            parentController.foodList.Remove(gameObject);
+            Destroy(gameObject);
+        }
+    }*/
+
+    public void RemoveOccupier()
+    {
+        occupier = null;
+        //Debug.Log("What about the occupier?");
+        //Debug.Log(occupier);
+    }
+
+    public void SetOccupier(GameObject go) 
+    {
+        occupier = go;
+    }
+
+    public GameObject GetOccupier()
+    {
+        return occupier;
     }
 }

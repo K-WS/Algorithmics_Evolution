@@ -1,6 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 public class CharacterMovement : MonoBehaviour
 {
@@ -8,15 +6,15 @@ public class CharacterMovement : MonoBehaviour
     public GameObject statter; 
 
     public Subject sub;
-    private float speed = 2f; //Stat 1, movement, affects energy consumption speed**2
-    private int quality = 1;  //Stat 2, minimum food quality to aim after when possible
+    private float speed; //Stat 1, movement, affects energy consumption speed**2
+    private int quality;  //Stat 2, minimum food quality to aim after when possible
                               //Stat 3 is object scale, affects energy consumption scale**3
     public float energy;
     public float startEnergy;
     public float foodCollected;
     public float foodNeeded;
 
-    public Transform target;
+    private Transform target;
     private bool active = true;
 
     private void Awake()
@@ -65,7 +63,18 @@ public class CharacterMovement : MonoBehaviour
                 //Rotate the "forward" vector towards the target direction by one step?
                 Vector3 rotDirection = Vector3.RotateTowards(transform.forward, targetDirection, 360f, 0.0f);
 
-                transform.position += targetDirection.normalized * step;//transform.forward * step;
+
+                if (Vector3.Distance(gameObject.transform.position, target.transform.position) <= 0.2f)
+                {
+                    gameObject.GetComponent<Collider>().enabled = false;
+                    gameObject.GetComponent<Collider>().enabled = true;
+                    target.Translate(new Vector3(0, 0, 0));
+                    target.GetComponent<Food>().SetOccupier(gameObject); //WARNING, Before the deadline, try to find why on earth The occupier had changed???
+                }
+                    
+                else
+                    transform.position += targetDirection.normalized * step;//transform.forward * step;
+
                 transform.rotation = Quaternion.LookRotation(rotDirection);
 
                 energy -= Mathf.Pow(speed, 2f) * Mathf.Pow(transform.localScale.x, 3);
@@ -74,10 +83,13 @@ public class CharacterMovement : MonoBehaviour
                 if (energy <= 0 || foodCollected >= foodNeeded)
                 {
                     sub.Notify();
-                    active = false;
-                    target.GetComponent<Food>().occupier = null;
 
+                    target.GetComponent<Food>().RemoveOccupier();
+                    target = null;
+                    //Debug.Log(target);
                     parentController.GetComponent<GameController>().DetectFood();
+                    active = false;
+                    
 
                 }
             }
@@ -106,18 +118,132 @@ public class CharacterMovement : MonoBehaviour
     public void DetectFood()
     {
         bool scare = false;
+        GameObject occupierToScare = null;
         int qualityThreshold = 1;
         int desperateThreshold = 1;
 
 
         //If going for new food, make sure to make the old food available first
         if (target != null)
-            target.gameObject.GetComponent<Food>().occupier = null;
-
-        //Find closest non-assinged food and assign it, if none found, take closest assigned
+        {
+            target.gameObject.GetComponent<Food>().RemoveOccupier();
+            target = null;
+        }
+            
+        //Keep track of closest food...
         GameObject goMin = null;
         float minDist = Mathf.Infinity;
-        
+
+        GameObject goForced = null;
+        float minDistForced = Mathf.Infinity;
+
+        //... And current position
+        Vector3 currentPos = transform.position;
+
+        //Go through every food to determine best choice
+        foreach (GameObject go in parentController.foodList)
+        {
+            //Get distance between animal and food
+            float dist = Vector3.Distance(currentPos, go.transform.position);
+            Food food = go.GetComponent<Food>();
+            GameObject foodOccupier = food.GetOccupier();
+
+            //First barrier, determine if suitable quality
+
+            
+            //1. Larger or equal than quality, other conditions blocked off, check distance
+            if (food.quality >= quality)
+            {
+                //Check if shorter distance
+                if (dist < minDist)
+                {
+                    //And finally, check if food not occupied or is but character larger
+                    if (foodOccupier == null)
+                    {
+                        scare = false;
+                        occupierToScare = null;
+                        qualityThreshold = quality;
+                        goMin = go;
+                        minDist = dist;
+                    }
+
+                    else if (foodOccupier != null &&
+                            gameObject.transform.localScale.x -
+                            foodOccupier.transform.localScale.x >= 0.15)
+                    {
+                        scare = true;
+                        occupierToScare = foodOccupier;
+                        qualityThreshold = food.quality;
+                        goMin = go;
+                        minDist = dist;
+                    }
+                }
+            }
+
+            //2. less than quality, but equal qualityThreshold, must check distance
+            else if(food.quality == qualityThreshold)
+            {
+                //Check if shorter distance
+                if (dist < minDist)
+                {
+                    //And finally, check if food not occupied or is but character larger
+                    if (foodOccupier == null)
+                    {
+                        scare = false;
+                        occupierToScare = null;
+                        goMin = go;
+                        minDist = dist;
+                    }
+
+                    else if (foodOccupier != null &&
+                            gameObject.transform.localScale.x -
+                            foodOccupier.transform.localScale.x >= 0.15)
+                    {
+                        scare = true;
+                        occupierToScare = foodOccupier;
+                        goMin = go;
+                        minDist = dist;
+                    }
+                }
+            }
+
+            //3. less than quality, but better qualityThreshold, do not check distance, since better food
+            else if (food.quality > qualityThreshold)
+            {
+                //check if occupied or not but larger
+                if (foodOccupier == null)
+                {
+                    scare = false;
+                    occupierToScare = null;
+                    qualityThreshold = food.quality;
+                    goMin = go;
+                    minDist = dist;
+                }
+
+                else if (foodOccupier != null &&
+                        gameObject.transform.localScale.x -
+                        foodOccupier.transform.localScale.x >= 0.15)
+                {
+                    scare = true;
+                    occupierToScare = foodOccupier;
+                    qualityThreshold = food.quality;
+                    goMin = go;
+                    minDist = dist;
+                }
+            }
+        }
+
+        // pick closest food as target
+        if(goMin != null)
+        {
+            target = goMin.transform;
+            goMin.GetComponent<Food>().SetOccupier(this.gameObject);
+        }
+
+        /*//Find closest non-assinged food and assign it, if none found, take closest assigned
+        GameObject goMin = null;
+        float minDist = Mathf.Infinity;
+
         GameObject goForced = null;
         float minDistForced = Mathf.Infinity;
 
@@ -152,8 +278,8 @@ public class CharacterMovement : MonoBehaviour
 
             //If food is occupied, but character larger and minimum wanted quality, then change goMin and minDist and scare them
             else if (food.occupier != null &&
-                    food.occupier.transform.localScale.x -
-                    gameObject.transform.localScale.x >= 0.15 && 
+                    gameObject.transform.localScale.x -
+                    food.occupier.transform.localScale.x >= 0.15 && 
                     dist < minDist)
             {
 
@@ -209,7 +335,7 @@ public class CharacterMovement : MonoBehaviour
 
             goMin.GetComponent<Food>().occupier = this.gameObject;
             target = goMin.transform;
-        }
+        }*/
     }
 
     public void Mutate()

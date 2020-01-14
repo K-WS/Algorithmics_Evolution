@@ -59,7 +59,8 @@ public class GameController : MonoBehaviour, Observer
         timeToReset = 0;
         init = false;
 
-        circleFloor.transform.localScale = new Vector3(radius, 0.0001f, radius);
+        circleFloor.transform.localScale = new Vector3(radius, 10f, radius);
+        circleFloor.transform.position = new Vector3(0, -10f, 0);
     }
 
     // Update is called once per frame
@@ -249,6 +250,7 @@ public class GameController : MonoBehaviour, Observer
     public void SubjectUpdate(object sender)
     {
         expendedChars += 1;
+        Debug.Log(expendedChars);
         //Start resetting process
         if (expendedChars == characterList.Count)
         {
