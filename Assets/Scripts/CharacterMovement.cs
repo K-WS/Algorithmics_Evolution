@@ -106,10 +106,12 @@ public class CharacterMovement : MonoBehaviour
     public void DetectFood()
     {
         bool scare = false;
-        
+        int qualityThreshold = 1;
+        int desperateThreshold = 1;
+
 
         //If going for new food, make sure to make the old food available first
-        if(target != null)
+        if (target != null)
             target.gameObject.GetComponent<Food>().occupier = null;
 
         //Find closest non-assinged food and assign it, if none found, take closest assigned
@@ -123,9 +125,6 @@ public class CharacterMovement : MonoBehaviour
 
         foreach (GameObject go in parentController.foodList)
         {
-
-            int qualityThreshold = 1;
-            int desperateThreshold = 1;
 
             //Get distance between object and food
             float dist = Vector3.Distance(go.transform.position, currentPos);
