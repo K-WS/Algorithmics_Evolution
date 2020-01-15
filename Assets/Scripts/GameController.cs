@@ -218,6 +218,9 @@ public class GameController : MonoBehaviour, Observer
 
                 GameObject newGO = CreateCharacter(go);
 
+                go.GetComponent<CharacterMovement>().updateBiases();
+                newGO.GetComponent<CharacterMovement>().updateBiases();
+
                 go.GetComponent<CharacterMovement>().Mutate();
                 newGO.GetComponent<CharacterMovement>().Mutate();
 
@@ -250,7 +253,7 @@ public class GameController : MonoBehaviour, Observer
     public void SubjectUpdate(object sender)
     {
         expendedChars += 1;
-        Debug.Log(expendedChars);
+
         //Start resetting process
         if (expendedChars == characterList.Count)
         {
@@ -299,7 +302,7 @@ public class GameController : MonoBehaviour, Observer
         //Notify all players that new food has been created
         foreach (GameObject character in characterList)
         {
-            character.GetComponent<CharacterMovement>().DetectFood();
+            character.GetComponent<CharacterMovement>().DetectFood(false);
         }
     }
 

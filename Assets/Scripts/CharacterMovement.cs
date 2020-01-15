@@ -7,15 +7,28 @@ public class CharacterMovement : MonoBehaviour
 
     public Subject sub;
     private float speed; //Stat 1, movement, affects energy consumption speed**2
-    private int quality;  //Stat 2, minimum food quality to aim after when possible
-                              //Stat 3 is object scale, affects energy consumption scale**3
+    private int quality; //Stat 2, minimum food quality to aim after when possible
+                         //Stat 3 is object scale, affects energy consumption scale**3
+
+    private float oldSpeed;
+    private float oldQuality;
+    private float oldSize;
+
+    private float speedBias;
+    private float qualityBias;
+    private float sizeBias;
+
     public float energy;
     public float startEnergy;
     public float foodCollected;
     public float foodNeeded;
+    public bool desperate;
 
     private Transform target;
     private bool active = true;
+
+    //Separate statistics used as global variables in DetectFood to reduce code there
+
 
     private void Awake()
     {
@@ -27,13 +40,23 @@ public class CharacterMovement : MonoBehaviour
     void Start()
     {
         parentController = GetComponentInParent<GameController>();
-        //startEnergy = 4000f;
-        //energy = 4000f;
         foodCollected = 0;
         foodNeeded = 2;
-    }
 
-    // Update is called once per frame
+        speedBias = 0f;
+        qualityBias = 0f;
+        sizeBias = 0f;
+
+        oldSpeed = Mathf.Infinity;
+        oldQuality = Mathf.Infinity;
+        oldSize = Mathf.Infinity;
+}
+
+    /*
+        Update is called once per frame, it ensures that the player is always
+        moving towards it's target when it still needs food, and if not done,
+        search for new food to continue moving towards
+    */
     void Update()
     {
         if(active)
@@ -41,35 +64,31 @@ public class CharacterMovement : MonoBehaviour
             //Check to see if character has no food to go after
             if(target == null)
             {
-                //No food, end
-                if (parentController.foodList.Count == 0)
+                //No food or enough food consumed, end
+                if (parentController.foodList.Count == 0 || foodCollected >= foodNeeded)
                 {
-                    sub.Notify();
-                    active = false;
+                    StopCharacter();
                 }
-                //There is food, find it
-                else 
-                    DetectFood();
+                //There is food to get, find it
+                else
+                    DetectFood(false);
             }
 
-            //Error prevention check if there isn't enough food to go for everyone
+            //There is a target to currently move towards
             if(target != null)
             {
                 //Assign movement speed
                 float step = Time.deltaTime * speed;
 
-                //Assign target to move towards
+                //Assign target to move towards and Rotate the "forward" vector towards the target direction
                 Vector3 targetDirection = target.position - transform.position;
-                //Rotate the "forward" vector towards the target direction by one step?
                 Vector3 rotDirection = Vector3.RotateTowards(transform.forward, targetDirection, 360f, 0.0f);
-
 
                 if (Vector3.Distance(gameObject.transform.position, target.transform.position) <= 0.2f)
                 {
                     gameObject.GetComponent<Collider>().enabled = false;
                     gameObject.GetComponent<Collider>().enabled = true;
                     target.Translate(new Vector3(0, 0, 0));
-                    target.GetComponent<Food>().SetOccupier(gameObject); //WARNING, Before the deadline, try to find why on earth The occupier had changed???
                 }
                     
                 else
@@ -80,20 +99,26 @@ public class CharacterMovement : MonoBehaviour
                 energy -= Mathf.Pow(speed, 2f) * Mathf.Pow(transform.localScale.x, 3);
 
                 //If energy runs out here or has gotten enough food, send observation notification
-                if (energy <= 0 || foodCollected >= foodNeeded)
+                if (energy <= 0)
                 {
-                    sub.Notify();
-
-                    target.GetComponent<Food>().RemoveOccupier();
-                    target = null;
-                    //Debug.Log(target);
-                    parentController.GetComponent<GameController>().DetectFood();
-                    active = false;
-                    
-
+                    StopCharacter();
                 }
             }
         }
+    }
+
+    public void StopCharacter()
+    {
+        sub.Notify();
+        active = false;
+
+        if (target != null)
+        {
+            target.GetComponent<Food>().RemoveOccupier();
+            target = null;
+            parentController.GetComponent<GameController>().DetectFood();
+        }
+        
     }
 
     public void ResetEnergy()
@@ -105,22 +130,17 @@ public class CharacterMovement : MonoBehaviour
     }
 
     /*
-    This method is used to detect food and pick the best choice:
-    1. General case, will always prefer a food that isn't picked, or scares the other character
-       when it's large enough to go after some other food.
-    2. If there isn't enough food to go for every character, will go for closest, scaring away
-       others becomes ineffective when desperate for food.
-    3. During the entire time, quality pays an important role. While the minimum quality threshold
-       hasn't been met, both the normal and desperate case only save the new food as long as the
-       current quality isn't worse.
-       Otherwise, if the threshold is met, then it just saves any food over the threshold
+    This method is used to detect food and pick the best choice based on animal stats.
     */
-    public void DetectFood()
+    public void DetectFood(bool scared)
     {
-        bool scare = false;
+        desperate = false;
         GameObject occupierToScare = null;
         int qualityThreshold = 1;
-        int desperateThreshold = 1;
+
+        //Since another animal scared this one, remove only target, the other has assigned occupier
+        if (scared == true)
+            target = null;
 
 
         //If going for new food, make sure to make the old food available first
@@ -134,11 +154,12 @@ public class CharacterMovement : MonoBehaviour
         GameObject goMin = null;
         float minDist = Mathf.Infinity;
 
-        GameObject goForced = null;
-        float minDistForced = Mathf.Infinity;
+        GameObject goDesperate = null;
+        float minDistDesperate = Mathf.Infinity;
 
         //... And current position
         Vector3 currentPos = transform.position;
+
 
         //Go through every food to determine best choice
         foreach (GameObject go in parentController.foodList)
@@ -150,17 +171,15 @@ public class CharacterMovement : MonoBehaviour
 
             //First barrier, determine if suitable quality
 
-            
             //1. Larger or equal than quality, other conditions blocked off, check distance
             if (food.quality >= quality)
             {
-                //Check if shorter distance
-                if (dist < minDist)
+                //Exception, check if better quality, if yes, overtake without checking distance
+                if (quality != qualityThreshold)
                 {
-                    //And finally, check if food not occupied or is but character larger
+                    //Only check if occupied
                     if (foodOccupier == null)
                     {
-                        scare = false;
                         occupierToScare = null;
                         qualityThreshold = quality;
                         goMin = go;
@@ -171,11 +190,35 @@ public class CharacterMovement : MonoBehaviour
                             gameObject.transform.localScale.x -
                             foodOccupier.transform.localScale.x >= 0.15)
                     {
-                        scare = true;
                         occupierToScare = foodOccupier;
                         qualityThreshold = food.quality;
                         goMin = go;
                         minDist = dist;
+                    }
+                }
+
+                //Quality and qualityThreshold same, meaning previous element was quality itself
+                else
+                {
+                    //Check if shorter distance
+                    if (dist < minDist)
+                    {
+                        //And finally, check if food not occupied or is but character larger
+                        if (foodOccupier == null)
+                        {
+                            occupierToScare = null;
+                            goMin = go;
+                            minDist = dist;
+                        }
+
+                        else if (foodOccupier != null &&
+                                gameObject.transform.localScale.x -
+                                foodOccupier.transform.localScale.x >= 0.15)
+                        {
+                            occupierToScare = foodOccupier;
+                            goMin = go;
+                            minDist = dist;
+                        }
                     }
                 }
             }
@@ -189,20 +232,20 @@ public class CharacterMovement : MonoBehaviour
                     //And finally, check if food not occupied or is but character larger
                     if (foodOccupier == null)
                     {
-                        scare = false;
                         occupierToScare = null;
                         goMin = go;
                         minDist = dist;
+
                     }
 
                     else if (foodOccupier != null &&
                             gameObject.transform.localScale.x -
                             foodOccupier.transform.localScale.x >= 0.15)
                     {
-                        scare = true;
                         occupierToScare = foodOccupier;
                         goMin = go;
                         minDist = dist;
+
                     }
                 }
             }
@@ -213,7 +256,6 @@ public class CharacterMovement : MonoBehaviour
                 //check if occupied or not but larger
                 if (foodOccupier == null)
                 {
-                    scare = false;
                     occupierToScare = null;
                     qualityThreshold = food.quality;
                     goMin = go;
@@ -224,12 +266,18 @@ public class CharacterMovement : MonoBehaviour
                         gameObject.transform.localScale.x -
                         foodOccupier.transform.localScale.x >= 0.15)
                 {
-                    scare = true;
                     occupierToScare = foodOccupier;
                     qualityThreshold = food.quality;
                     goMin = go;
                     minDist = dist;
                 }
+            }
+
+            //Separate case for desperate mode to just check closest food
+            if (dist < minDistDesperate)
+            {
+                goDesperate = go;
+                minDistDesperate = dist;
             }
         }
 
@@ -238,111 +286,61 @@ public class CharacterMovement : MonoBehaviour
         {
             target = goMin.transform;
             goMin.GetComponent<Food>().SetOccupier(this.gameObject);
+
+            //Scare away any character to scare normally
+            if (occupierToScare != null)
+                occupierToScare.GetComponent<CharacterMovement>().DetectFood(true);
+        }
+        else if (goDesperate != null)
+        {
+            //Do not reassign occupier; Depending on who grabs the food first
+            //Due to the go becoming null, both animals should then reuse DetectFood
+            target = goDesperate.transform;
+            desperate = true;
+        }
+    }
+
+    public void updateBiases()
+    {
+        //only survived, biases halved
+        if(foodCollected >= foodNeeded/2 && foodCollected < foodNeeded)
+        {
+            qualityBias /= 2;
+            sizeBias /= 2;
+            speedBias /= 2;
         }
 
-        /*//Find closest non-assinged food and assign it, if none found, take closest assigned
-        GameObject goMin = null;
-        float minDist = Mathf.Infinity;
-
-        GameObject goForced = null;
-        float minDistForced = Mathf.Infinity;
-
-        Vector3 currentPos = transform.position;
-
-        foreach (GameObject go in parentController.foodList)
+        //reproduced, therefore good stats
+        //Note that if the bias becomes too large, the animal can only evolve in one direction
+        //Consider this as specialized overtuning that causes extinction
+        else if(foodCollected >= foodNeeded && oldQuality != Mathf.Infinity && oldSize != Mathf.Infinity && oldSpeed != Mathf.Infinity)
         {
+            float speedDif = speed - oldSpeed;
+            float qualityDif = quality - oldQuality;
+            float sizeDif = transform.localScale.x - oldSize;
 
-            //Get distance between object and food
-            float dist = Vector3.Distance(go.transform.position, currentPos);
+            speedBias += speedDif >= 0 ? 0.1f : -0.1f;
+            sizeBias += sizeDif >= 0 ? 0.04f : -0.04f;
 
-            Food food = go.GetComponent<Food>();
-
-            //If food not occupied and quicker and minimum wanted quality, change goMin and minDist
-            if (food.occupier == null && dist < minDist)
-            {
-                //Check Quality status
-                //Forceful reset of qualityThreshold to not become stricter, if food good enough
-                if (food.quality >= quality)
-                {
-                    qualityThreshold = quality;
-                }
-                //Actual check if the food is good enough
-                if(food.quality >= qualityThreshold)
-                {
-                    qualityThreshold = food.quality;
-                    goMin = go;
-                    minDist = dist;
-                    scare = false;
-                }  
-            }
-
-            //If food is occupied, but character larger and minimum wanted quality, then change goMin and minDist and scare them
-            else if (food.occupier != null &&
-                    gameObject.transform.localScale.x -
-                    food.occupier.transform.localScale.x >= 0.15 && 
-                    dist < minDist)
-            {
-
-                //Check Quality status
-                //Forceful reset of qualityThreshold to not become stricter, if food good enough
-                if (food.quality >= quality)
-                {
-                    qualityThreshold = quality;
-                }
-                //Actual check if the food is good enough
-                if (food.quality >= qualityThreshold)
-                {
-                    qualityThreshold = food.quality;
-                    goMin = go;
-                    minDist = dist;
-                    scare = false;
-                }
-            }
-
-            //If food is occupied and not larger, then add it to "last resort" quickest
-            else if(go.GetComponent<Food>().occupier != null && dist < minDistForced)
-            {
-                //Check Desperate Quality status
-                //Forceful reset of desperateThreshold to not become stricter, if food good enough
-                if (food.quality >= quality)
-                {
-                    desperateThreshold = quality;
-                }
-                //Actual check if the food is good enough
-                if (food.quality >= desperateThreshold)
-                {
-                    qualityThreshold = food.quality;
-                    goForced = go;
-                    minDistForced = dist;
-                }
-            }
-
+            if (qualityDif >= 1)
+                qualityBias += 0.01f;
+            else if (qualityDif <= -1)
+                qualityBias -= 0.01f; 
         }
 
-        //If no non-assigned food is available, pick forced food
-        //Assinging occupier no longer matters in this case
-        if (goMin == null && goForced != null)
-        {
-            target = goForced.transform;
-        }
+        
 
-        //If goMin is not null, then assign it as true
-        else if (goMin != null)
-        {
-            //If food is already occupied, then scare them away.
-            if (scare == true)
-                goMin.GetComponent<Food>().occupier.GetComponent<CharacterMovement>().DetectFood();
-
-            goMin.GetComponent<Food>().occupier = this.gameObject;
-            target = goMin.transform;
-        }*/
     }
 
     public void Mutate()
     {
-        float speedChange = Random.Range(-0.5f, 0.5f);
-        float sizeChange = Random.Range(-0.2f, 0.2f);
-        float qualityChange = Random.Range(0f, 1f);
+        oldSpeed = speed;
+        oldQuality = quality;
+        oldSize = transform.localScale.x;
+
+        float speedChange = Random.Range(-0.5f + speedBias, 0.5f + speedBias);
+        float sizeChange = Random.Range(-0.2f + sizeBias, 0.2f + sizeBias);
+        float qualityChange = Random.Range(0f, 1f) + qualityBias;
 
         speed += speedChange;
         if (speed < 1f) speed = 1f;
