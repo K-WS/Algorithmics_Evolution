@@ -5,7 +5,7 @@ using UnityEngine;
 public class Food : MonoBehaviour
 {
     private GameController parentController;
-    public int quality;
+    private int quality;
     private GameObject occupier;
 
     void Start()
@@ -72,5 +72,10 @@ public class Food : MonoBehaviour
     public GameObject GetOccupier()
     {
         return occupier;
+    }
+
+    public int GetQuality()
+    {
+        return quality;
     }
 }

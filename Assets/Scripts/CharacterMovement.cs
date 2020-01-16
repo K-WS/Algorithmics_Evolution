@@ -22,12 +22,17 @@ public class CharacterMovement : MonoBehaviour
     public float startEnergy;
     public float foodCollected;
     public float foodNeeded;
-    public bool desperate;
+    
 
     private Transform target;
     private bool active = true;
 
     //Separate statistics used as global variables in DetectFood to reduce code there
+    public bool desperate;
+    private GameObject occupierToScare;
+    private int qualityThreshold;
+    private GameObject goMin;
+    private float minDist;
 
 
     private void Awake()
@@ -117,8 +122,7 @@ public class CharacterMovement : MonoBehaviour
             target.GetComponent<Food>().RemoveOccupier();
             target = null;
             parentController.GetComponent<GameController>().DetectFood();
-        }
-        
+        }    
     }
 
     public void ResetEnergy()
@@ -134,71 +138,93 @@ public class CharacterMovement : MonoBehaviour
     */
     public void DetectFood(bool scared)
     {
-        desperate = false;
-        GameObject occupierToScare = null;
-        int qualityThreshold = 1;
 
-        //Since another animal scared this one, remove only target, the other has assigned occupier
-        if (scared == true)
-            target = null;
-
-
-        //If going for new food, make sure to make the old food available first
-        if (target != null)
+        if(active == true)
         {
-            target.gameObject.GetComponent<Food>().RemoveOccupier();
-            target = null;
-        }
-            
-        //Keep track of closest food...
-        GameObject goMin = null;
-        float minDist = Mathf.Infinity;
+            desperate = false;
+            occupierToScare = null;
+            qualityThreshold = 1;
 
-        GameObject goDesperate = null;
-        float minDistDesperate = Mathf.Infinity;
+            //Since another animal scared this one, remove only target, the other has assigned occupier
+            if (scared == true)
+                target = null;
 
-        //... And current position
-        Vector3 currentPos = transform.position;
-
-
-        //Go through every food to determine best choice
-        foreach (GameObject go in parentController.foodList)
-        {
-            //Get distance between animal and food
-            float dist = Vector3.Distance(currentPos, go.transform.position);
-            Food food = go.GetComponent<Food>();
-            GameObject foodOccupier = food.GetOccupier();
-
-            //First barrier, determine if suitable quality
-
-            //1. Larger or equal than quality, other conditions blocked off, check distance
-            if (food.quality >= quality)
+            //If going for new food, make sure to make the old food available first
+            if (target != null)
             {
-                //Exception, check if better quality, if yes, overtake without checking distance
-                if (quality != qualityThreshold)
+                target.gameObject.GetComponent<Food>().RemoveOccupier();
+                target = null;
+            }
+
+            //Keep track of closest food...
+            goMin = null;
+            minDist = Mathf.Infinity;
+
+            GameObject goDesperate = null;
+            float minDistDesperate = Mathf.Infinity;
+
+            //... And current position
+            Vector3 currentPos = transform.position;
+
+
+
+            //Go through every food to determine best choice
+            foreach (GameObject go in parentController.foodList)
+            {
+                //Get distance between animal and food
+                float dist = Vector3.Distance(currentPos, go.transform.position);
+
+                Food food = go.GetComponent<Food>();
+                GameObject foodOccupier = food.GetOccupier();
+                int foodQuality = food.GetQuality();
+
+                //Hack to break away, since for some reason, when the round restarts, existing characters see only 0 food quality
+                if (foodQuality == 0)
+                    return;
+
+                //First barrier, determine if suitable quality
+
+                //1. Larger or equal than quality, other conditions blocked off, check distance
+                if (foodQuality >= quality)
                 {
-                    //Only check if occupied
-                    if (foodOccupier == null)
+                    //Exception, check if better quality, if yes, overtake without checking distance
+                    if (quality != qualityThreshold)
                     {
-                        occupierToScare = null;
-                        qualityThreshold = quality;
-                        goMin = go;
-                        minDist = dist;
+                        //Only check if occupied
+                        if (foodOccupier == null)
+                        {
+                            UpdateClosest(foodOccupier, quality, go, dist);
+                        }
+
+                        else if (foodOccupier != null && gameObject.transform.localScale.x - foodOccupier.transform.localScale.x >= 0.15)
+                        {
+                            UpdateClosest(foodOccupier, foodQuality, go, dist);
+                        }
+
                     }
 
-                    else if (foodOccupier != null &&
-                            gameObject.transform.localScale.x -
-                            foodOccupier.transform.localScale.x >= 0.15)
+                    //Quality and qualityThreshold same, meaning previous element was quality itself, compare distance, don't change qualitythreshold
+                    else
                     {
-                        occupierToScare = foodOccupier;
-                        qualityThreshold = food.quality;
-                        goMin = go;
-                        minDist = dist;
+                        //Check if shorter distance
+                        if (dist < minDist)
+                        {
+                            //And finally, check if food not occupied or is but character larger
+                            if (foodOccupier == null)
+                            {
+                                UpdateClosest(foodOccupier, 0, go, dist);
+                            }
+
+                            else if (foodOccupier != null && gameObject.transform.localScale.x - foodOccupier.transform.localScale.x >= 0.15)
+                            {
+                                UpdateClosest(foodOccupier, 0, go, dist);
+                            }
+                        }
                     }
                 }
 
-                //Quality and qualityThreshold same, meaning previous element was quality itself
-                else
+                //2. less than quality, but equal qualityThreshold, must check distance
+                else if (foodQuality == qualityThreshold)
                 {
                     //Check if shorter distance
                     if (dist < minDist)
@@ -206,98 +232,70 @@ public class CharacterMovement : MonoBehaviour
                         //And finally, check if food not occupied or is but character larger
                         if (foodOccupier == null)
                         {
-                            occupierToScare = null;
-                            goMin = go;
-                            minDist = dist;
+                            UpdateClosest(foodOccupier, 0, go, dist);
                         }
 
-                        else if (foodOccupier != null &&
-                                gameObject.transform.localScale.x -
-                                foodOccupier.transform.localScale.x >= 0.15)
+
+                        else if (foodOccupier != null && gameObject.transform.localScale.x - foodOccupier.transform.localScale.x >= 0.15)
                         {
-                            occupierToScare = foodOccupier;
-                            goMin = go;
-                            minDist = dist;
+                            UpdateClosest(foodOccupier, 0, go, dist);
                         }
                     }
                 }
-            }
 
-            //2. less than quality, but equal qualityThreshold, must check distance
-            else if(food.quality == qualityThreshold)
-            {
-                //Check if shorter distance
-                if (dist < minDist)
+                //3. less than quality, but better qualityThreshold, do not check distance, since better food
+                else if (foodQuality > qualityThreshold)
                 {
-                    //And finally, check if food not occupied or is but character larger
+                    //check if occupied or not but larger
                     if (foodOccupier == null)
                     {
-                        occupierToScare = null;
-                        goMin = go;
-                        minDist = dist;
-
+                        UpdateClosest(foodOccupier, foodQuality, go, dist);
                     }
 
-                    else if (foodOccupier != null &&
-                            gameObject.transform.localScale.x -
-                            foodOccupier.transform.localScale.x >= 0.15)
+
+                    else if (foodOccupier != null && gameObject.transform.localScale.x - foodOccupier.transform.localScale.x >= 0.15)
                     {
-                        occupierToScare = foodOccupier;
-                        goMin = go;
-                        minDist = dist;
-
+                        UpdateClosest(foodOccupier, foodQuality, go, dist);
                     }
-                }
-            }
 
-            //3. less than quality, but better qualityThreshold, do not check distance, since better food
-            else if (food.quality > qualityThreshold)
-            {
-                //check if occupied or not but larger
-                if (foodOccupier == null)
+                }
+
+                //Separate case for desperate mode to just check closest food
+                if (dist < minDistDesperate)
                 {
-                    occupierToScare = null;
-                    qualityThreshold = food.quality;
-                    goMin = go;
-                    minDist = dist;
-                }
-
-                else if (foodOccupier != null &&
-                        gameObject.transform.localScale.x -
-                        foodOccupier.transform.localScale.x >= 0.15)
-                {
-                    occupierToScare = foodOccupier;
-                    qualityThreshold = food.quality;
-                    goMin = go;
-                    minDist = dist;
+                    goDesperate = go;
+                    minDistDesperate = dist;
                 }
             }
 
-            //Separate case for desperate mode to just check closest food
-            if (dist < minDistDesperate)
+            // pick closest food as target
+            if (goMin != null)
             {
-                goDesperate = go;
-                minDistDesperate = dist;
+                target = goMin.transform;
+                goMin.GetComponent<Food>().SetOccupier(this.gameObject);
+
+                //Scare away character
+                if (occupierToScare != null)
+                    occupierToScare.GetComponent<CharacterMovement>().DetectFood(true);
+            }
+            else if (goDesperate != null)
+            {
+                //Do not reassign occupier; Depending on who grabs the food first. Due to the go becoming null, both animals should then reuse DetectFood
+                target = goDesperate.transform;
+                desperate = true;
             }
         }
+    }
 
-        // pick closest food as target
-        if(goMin != null)
-        {
-            target = goMin.transform;
-            goMin.GetComponent<Food>().SetOccupier(this.gameObject);
+    //Used in DetectFood to update goMin and minDist related variables whenever conditions met
+    private void UpdateClosest(GameObject toScare, int newQualThreshold, GameObject min, float dMin)
+    {
+        occupierToScare = toScare;
+        if (newQualThreshold != 0)
+            qualityThreshold = newQualThreshold;
 
-            //Scare away any character to scare normally
-            if (occupierToScare != null)
-                occupierToScare.GetComponent<CharacterMovement>().DetectFood(true);
-        }
-        else if (goDesperate != null)
-        {
-            //Do not reassign occupier; Depending on who grabs the food first
-            //Due to the go becoming null, both animals should then reuse DetectFood
-            target = goDesperate.transform;
-            desperate = true;
-        }
+        goMin = min;
+        minDist = dMin;
     }
 
     public void updateBiases()
@@ -361,9 +359,9 @@ public class CharacterMovement : MonoBehaviour
     public void ChangeColor()
     {
         GetComponent<MeshRenderer>().materials[0].color = new Color(
-                                                                    0.1f * (speed),
-                                                                    0.1f * (transform.localScale.x),
-                                                                    quality * 0.2f,
+                                                                    0.1f  * speed,
+                                                                    0.25f * transform.localScale.x,
+                                                                    0.2f  * quality,
                                                                     1f);
     }
 

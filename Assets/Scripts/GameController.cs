@@ -66,7 +66,11 @@ public class GameController : MonoBehaviour, Observer
     // Update is called once per frame
     void Update()
     {
-        if(reset == true)
+        //Close application when escape pressed
+        if (Input.GetKeyDown("escape"))
+            Application.Quit();
+
+        if (reset == true)
         {
             timeToReset += Time.deltaTime;
             if(timeToReset >= 1)
@@ -294,7 +298,7 @@ public class GameController : MonoBehaviour, Observer
             prefab.transform.parent = this.transform;
             foodList.Add(prefab);
         }
-        DetectFood();
+        //DetectFood();
     }
 
     public void DetectFood()

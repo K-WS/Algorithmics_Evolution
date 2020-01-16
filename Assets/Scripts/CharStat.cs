@@ -17,7 +17,7 @@ public class CharStat : MonoBehaviour
 
         Vector3 pLoc = transform.parent.position;
         gameObject.transform.position = new Vector3(pLoc.x + GetComponent<MeshRenderer>().materials[0].color[0] * 20,
-                                                    pLoc.y + GetComponent<MeshRenderer>().materials[0].color[1] * 40,
+                                                    pLoc.y + GetComponent<MeshRenderer>().materials[0].color[1] * 20,
                                                     pLoc.z + GetComponent<MeshRenderer>().materials[0].color[2] * 20);
     }
 
