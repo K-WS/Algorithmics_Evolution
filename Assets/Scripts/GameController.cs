@@ -12,6 +12,7 @@ public class GameController : MonoBehaviour, Observer
 
     //Character related Prefabs
     public GameObject character;
+    public GameObject character2;
     public GameObject stats;
 
     //Character info
@@ -42,10 +43,18 @@ public class GameController : MonoBehaviour, Observer
     public Slider startSizeText;
     public Slider startQualityText;
 
+    public Text modelText;
+    public Button simpleButton;
+    public Button dinoButton;
+    private bool complexModel;
+
     public Button startButton;
     public Button resetButton;
 
+
     public Image setupPanel;
+
+
 
 
     // Start is called before the first frame update
@@ -54,10 +63,15 @@ public class GameController : MonoBehaviour, Observer
         startButton.onClick.AddListener(StartClick);
         resetButton.onClick.AddListener(ResetClick);
 
+        simpleButton.onClick.AddListener(simpleClick);
+        dinoButton.onClick.AddListener(dinoClick);
+
         expendedChars = 0;
         reset = false;
         timeToReset = 0;
         init = false;
+        complexModel = false;
+        modelText.text = "Simple";
 
         circleFloor.transform.localScale = new Vector3(radius, 10f, radius);
         circleFloor.transform.position = new Vector3(0, -10f, 0);
@@ -138,6 +152,18 @@ public class GameController : MonoBehaviour, Observer
         setupPanel.gameObject.SetActive(true);
     }
 
+    private void simpleClick()
+    {
+        complexModel = false;
+        modelText.text = "Simple";
+    }
+
+    private void dinoClick()
+    {
+        complexModel = true;
+        modelText.text = "Dinosaur";
+    }
+
 
     /*-------------------------------------------------------*/
     /*--------------Character related Functions--------------*/
@@ -146,7 +172,12 @@ public class GameController : MonoBehaviour, Observer
     //Method to create a new character
     private void CreateCharacter()
     {
-        GameObject prefab = Instantiate(character);
+        GameObject prefab;
+        if (complexModel == false)
+            prefab = Instantiate(character);
+        else
+            prefab = Instantiate(character2);
+        prefab.GetComponent<CharacterMovement>().complex = complexModel;
         //float speed, float size, int quality, float energy
         prefab.GetComponent<CharacterMovement>().SetStats(startingSpeed, startingSize, startingQuality, startingEnergy);
         prefab.GetComponent<CharacterMovement>().sub.AddObserver(this);
@@ -159,13 +190,14 @@ public class GameController : MonoBehaviour, Observer
         prefab.GetComponent<CharacterMovement>().ChangeColor();
 
         prefab.GetComponent<CharacterMovement>().statter = Instantiate(stats);
-        prefab.GetComponent<CharacterMovement>().statter.GetComponent<CharStat>().Realign(prefab);
+        prefab.GetComponent<CharacterMovement>().statter.GetComponent<CharStat>().Realign(prefab, complexModel);
     }
 
     //Method to use a preset character to make a new character from
     private GameObject CreateCharacter(GameObject go)
     {
         GameObject newGO = Instantiate(go);
+        newGO.GetComponent<CharacterMovement>().complex = complexModel;
         newGO.GetComponent<CharacterMovement>().SetStats(startingSpeed, startingSize, startingQuality, startingEnergy);
         newGO.GetComponent<CharacterMovement>().sub.AddObserver(this);
         RepositionCharacter(newGO);
@@ -177,7 +209,7 @@ public class GameController : MonoBehaviour, Observer
 
         GameObject statter = Instantiate(stats);
         newGO.GetComponent<CharacterMovement>().statter = statter;
-        statter.GetComponent<CharStat>().Realign(newGO);
+        statter.GetComponent<CharStat>().Realign(newGO, complexModel);
 
         return newGO;
     }

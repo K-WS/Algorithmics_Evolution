@@ -33,6 +33,10 @@ public class CharacterMovement : MonoBehaviour
     private int qualityThreshold;
     private GameObject goMin;
     private float minDist;
+    public bool complex;
+
+    //Separate animation handler to pass 
+    private Animator animator;
 
 
     private void Awake()
@@ -44,6 +48,18 @@ public class CharacterMovement : MonoBehaviour
     //Start is called when the object is instantiated
     void Start()
     {
+        if(complex)
+        {
+            animator = GetComponent<Animator>();
+
+            animator.SetFloat("Speed", speed);
+            animator.SetFloat("Energy", energy);
+            animator.SetFloat("WalkMultiplier", 1 + speed * 0.1f);
+            animator.SetFloat("RunMultiplier", 1 + speed / 4 * 0.2f);
+        }
+        
+        
+
         parentController = GetComponentInParent<GameController>();
         foodCollected = 0;
         foodNeeded = 2;
@@ -86,7 +102,8 @@ public class CharacterMovement : MonoBehaviour
                 float step = Time.deltaTime * speed;
 
                 //Assign target to move towards and Rotate the "forward" vector towards the target direction
-                Vector3 targetDirection = target.position - transform.position;
+                //Vector3 targetDirection = target.position - transform.position;
+                Vector3 targetDirection = new Vector3(target.position.x, transform.position.y, target.position.z) - new Vector3(transform.position.x, transform.position.y, transform.position.z);
                 Vector3 rotDirection = Vector3.RotateTowards(transform.forward, targetDirection, 360f, 0.0f);
 
                 if (Vector3.Distance(gameObject.transform.position, target.transform.position) <= 0.2f)
@@ -116,6 +133,9 @@ public class CharacterMovement : MonoBehaviour
     {
         sub.Notify();
         active = false;
+        energy = 0;
+        if(complex)
+            animator.SetFloat("Energy", 0);
 
         if (target != null)
         {
@@ -131,6 +151,16 @@ public class CharacterMovement : MonoBehaviour
         foodCollected = 0;
         active = true;
         target = null;
+
+        if (complex)
+        {
+            animator = GetComponent<Animator>();
+
+            animator.SetFloat("Speed", speed);
+            animator.SetFloat("Energy", energy);
+            animator.SetFloat("WalkMultiplier", 1 + speed * 0.1f);
+            animator.SetFloat("RunMultiplier", 1 + speed / 4 * 0.2f);
+        }
     }
 
     /*
@@ -353,16 +383,25 @@ public class CharacterMovement : MonoBehaviour
 
         ChangeColor();
 
-        statter.GetComponent<CharStat>().Realign(gameObject);
+        statter.GetComponent<CharStat>().Realign(gameObject, complex);
     }
 
     public void ChangeColor()
     {
-        GetComponent<MeshRenderer>().materials[0].color = new Color(
-                                                                    0.1f  * speed,
-                                                                    0.25f * transform.localScale.x,
-                                                                    0.2f  * quality,
-                                                                    1f);
+        if (complex == false)
+            GetComponent<MeshRenderer>().materials[0].color = new Color(
+                                                                        0.1f  * speed,
+                                                                        0.25f * transform.localScale.x,
+                                                                        0.2f  * quality,
+                                                                        1f);
+        else
+        {
+            gameObject.transform.Find("Dinosaur").GetComponent<SkinnedMeshRenderer>().materials[1].color = new Color(
+                                                                        0.1f * speed,
+                                                                        0.25f * transform.localScale.x,
+                                                                        0.2f * quality,
+                                                                        1f);
+        }
     }
 
     public void SetStats(float speed, float size, int quality, float energy)
