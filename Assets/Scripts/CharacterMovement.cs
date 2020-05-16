@@ -3,7 +3,11 @@
 public class CharacterMovement : MonoBehaviour
 {
     private GameController parentController;
-    public GameObject statter; 
+    public GameObject statter;
+    public GameObject headSpike;
+    public GameObject bodyLSpike;
+    public GameObject bodyRSpike;
+
 
     public Subject sub;
     private float speed; //Stat 1, movement, affects energy consumption speed**2
@@ -39,6 +43,12 @@ public class CharacterMovement : MonoBehaviour
     private Animator animator;
 
 
+    public float Remap(float value, float from1, float to1, float from2, float to2)
+    {
+        //Debug.Log((value - from1) / (to1 - from1) * (to2 - from2) + from2);
+        return (value - from1) / (to1 - from1) * (to2 - from2) + from2;
+    }
+
     private void Awake()
     {
         sub = new Subject(this);
@@ -48,14 +58,18 @@ public class CharacterMovement : MonoBehaviour
     //Start is called when the object is instantiated
     void Start()
     {
-        if(complex)
+        if (complex)
         {
             animator = GetComponent<Animator>();
 
+            animator.SetBool("ShouldRun", speed < 5 ? false : true);
             animator.SetFloat("Speed", speed);
             animator.SetFloat("Energy", energy);
-            animator.SetFloat("WalkMultiplier", 1 + speed * 0.1f);
-            animator.SetFloat("RunMultiplier", 1 + speed / 4 * 0.2f);
+            //animator.SetFloat("WalkMultiplier", Remap(speed, 1f, 5f, 0.8f, 2f) / transform.localScale.x);
+            animator.SetFloat("WalkMultiplier", Remap(speed, 1f, 5f, 0.8f, 2f) / (1 + (transform.localScale.x - 1) / Remap(speed, 1f, 5f, 1f, 3f)));
+            animator.SetFloat("RunMultiplier", Remap(speed, 5f, 10f, 1.25f, 2.5f) / (1 + (transform.localScale.x - 1) / Remap(speed, 5f, 10f, 1f, 3f)));
+
+            setSpikes();
         }
         
         
@@ -106,10 +120,10 @@ public class CharacterMovement : MonoBehaviour
                 Vector3 targetDirection = new Vector3(target.position.x, transform.position.y, target.position.z) - new Vector3(transform.position.x, transform.position.y, transform.position.z);
                 Vector3 rotDirection = Vector3.RotateTowards(transform.forward, targetDirection, 360f, 0.0f);
 
-                if (Vector3.Distance(gameObject.transform.position, target.transform.position) <= 0.2f)
+                if (Vector3.Distance(gameObject.transform.position, target.transform.position) <= transform.localScale.x/2)
                 {
-                    gameObject.GetComponent<Collider>().enabled = false;
-                    gameObject.GetComponent<Collider>().enabled = true;
+                    gameObject.GetComponent<SphereCollider>().enabled = false;
+                    gameObject.GetComponent<SphereCollider>().enabled = true;
                     target.Translate(new Vector3(0, 0, 0));
                 }
                     
@@ -127,6 +141,9 @@ public class CharacterMovement : MonoBehaviour
                 }
             }
         }
+
+        //Check if food inside?
+        
     }
 
     public void StopCharacter()
@@ -156,10 +173,12 @@ public class CharacterMovement : MonoBehaviour
         {
             animator = GetComponent<Animator>();
 
+            animator.SetBool("ShouldRun", speed < 5 ? false : true);
             animator.SetFloat("Speed", speed);
             animator.SetFloat("Energy", energy);
-            animator.SetFloat("WalkMultiplier", 1 + speed * 0.1f);
-            animator.SetFloat("RunMultiplier", 1 + speed / 4 * 0.2f);
+            animator.SetFloat("WalkMultiplier", Remap(speed, 1f, 5f, 0.8f, 2f) / (1 + (transform.localScale.x - 1) / Remap(speed, 1f, 5f, 1f, 3f)));
+            animator.SetFloat("RunMultiplier", Remap(speed, 5f, 10f, 1.25f, 2.5f) / (1 + (transform.localScale.x - 1) / Remap(speed, 5f, 10f, 1f, 3f)));
+
         }
     }
 
@@ -374,19 +393,23 @@ public class CharacterMovement : MonoBehaviour
         if (speed < 1f) speed = 1f;
         if (speed > 10f) speed = 10f;
 
+        //Change scale based on size changes
         transform.localScale += new Vector3(sizeChange, sizeChange, sizeChange);
         if (transform.localScale.x < 1) transform.localScale = new Vector3(1f,1f,1f);
         if (transform.localScale.x > 4) transform.localScale = new Vector3(4f, 4f, 4f);
 
+        //Also move spikes based on size
+        setSpikes();
+
         if (qualityChange < 0.1f && quality > 1) quality -= 1;
         else if (qualityChange > 0.9f && quality < 5) quality += 1;
 
-        ChangeColor();
+        ChangeColor(false);
 
         statter.GetComponent<CharStat>().Realign(gameObject, complex);
     }
 
-    public void ChangeColor()
+    public void ChangeColor(bool first)
     {
         if (complex == false)
             GetComponent<MeshRenderer>().materials[0].color = new Color(
@@ -401,7 +424,25 @@ public class CharacterMovement : MonoBehaviour
                                                                         0.25f * transform.localScale.x,
                                                                         0.2f * quality,
                                                                         1f);
+            if (first)
+            {
+                gameObject.transform.Find("Dinosaur").GetComponent<SkinnedMeshRenderer>().materials[0].color = Random.ColorHSV(0f, 1f, 0.7f, 1.0f);
+            }
         }
+    }
+
+    private void setSpikes()
+    {
+        bodyLSpike.transform.localPosition = new Vector3(bodyLSpike.transform.localPosition.x,
+                                                        bodyLSpike.transform.localPosition.y,
+                                                        Remap(transform.localScale.x, 1f, 4f, 0.00045f, -0.00175f));
+        bodyRSpike.transform.localPosition = new Vector3(bodyRSpike.transform.localPosition.x,
+                                                        bodyRSpike.transform.localPosition.y,
+                                                        Remap(transform.localScale.x, 1f, 4f, 0.00045f, -0.00175f));
+
+        headSpike.transform.localPosition = new Vector3(headSpike.transform.localPosition.x,
+                                                        headSpike.transform.localPosition.y,
+                                                        Remap(transform.localScale.x, 1f, 4f, -0.0005f, -0.00221f));
     }
 
     public void SetStats(float speed, float size, int quality, float energy)

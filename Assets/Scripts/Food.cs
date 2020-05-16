@@ -14,40 +14,49 @@ public class Food : MonoBehaviour
         quality = Random.Range(1,6);
         occupier = null;
 
-        if (quality == 1)
-            this.GetComponent<MeshRenderer>().materials[0].color = new Color(
+        switch (quality)
+        {
+            case 1:
+                this.GetComponent<MeshRenderer>().materials[0].color = new Color(
                                                                             0.8f,
                                                                             0f,
                                                                             0f,
                                                                             1);
-        else if (quality == 2)
-            this.GetComponent<MeshRenderer>().materials[0].color = new Color(
+                break;
+            case 2:
+                this.GetComponent<MeshRenderer>().materials[0].color = new Color(
                                                                             0.8f,
                                                                             0.36f,
                                                                             0.13f,
                                                                             1);
-        else if (quality == 3)
-            this.GetComponent<MeshRenderer>().materials[0].color = new Color(
+                break;
+            case 3:
+                this.GetComponent<MeshRenderer>().materials[0].color = new Color(
                                                                             0.8f,
                                                                             0.72f,
                                                                             0.13f,
                                                                             1);
-        else if (quality == 4)
-            this.GetComponent<MeshRenderer>().materials[0].color = new Color(
+                break;
+            case 4:
+                this.GetComponent<MeshRenderer>().materials[0].color = new Color(
                                                                             0.4f,
                                                                             0.8f,
                                                                             0.13f,
                                                                             1);
-        else if (quality == 5)
-            this.GetComponent<MeshRenderer>().materials[0].color = new Color(
+                break;
+            case 5:
+                this.GetComponent<MeshRenderer>().materials[0].color = new Color(
                                                                             0.2f,
                                                                             0.8f,
                                                                             0.72f,
                                                                             1);
+                break;
+        }
     }
 
     private void OnTriggerEnter(Collider other)
     {
+        
         //Both regular case and desperate case assigned here
         if (other.gameObject.CompareTag("Player") && parentController != null && (other.gameObject == occupier || other.GetComponent<CharacterMovement>().desperate == true))
         {

@@ -70,8 +70,8 @@ public class GameController : MonoBehaviour, Observer
         reset = false;
         timeToReset = 0;
         init = false;
-        complexModel = false;
-        modelText.text = "Simple";
+        complexModel = true;
+        modelText.text = "Dinosaur";
 
         circleFloor.transform.localScale = new Vector3(radius, 10f, radius);
         circleFloor.transform.position = new Vector3(0, -10f, 0);
@@ -187,7 +187,7 @@ public class GameController : MonoBehaviour, Observer
         characterList.Add(prefab);
 
         //Although this should be called in the character itself, for init purposes, I want the statistics to work properly and hacked the first time in here.
-        prefab.GetComponent<CharacterMovement>().ChangeColor();
+        prefab.GetComponent<CharacterMovement>().ChangeColor(true);
 
         prefab.GetComponent<CharacterMovement>().statter = Instantiate(stats);
         prefab.GetComponent<CharacterMovement>().statter.GetComponent<CharStat>().Realign(prefab, complexModel);
@@ -205,7 +205,7 @@ public class GameController : MonoBehaviour, Observer
         newGO.transform.parent = this.transform;
         characterList.Add(newGO);
 
-        newGO.GetComponent<CharacterMovement>().ChangeColor();
+        newGO.GetComponent<CharacterMovement>().ChangeColor(false);
 
         GameObject statter = Instantiate(stats);
         newGO.GetComponent<CharacterMovement>().statter = statter;
