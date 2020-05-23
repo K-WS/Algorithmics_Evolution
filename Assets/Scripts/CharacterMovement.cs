@@ -399,7 +399,8 @@ public class CharacterMovement : MonoBehaviour
         if (transform.localScale.x > 4) transform.localScale = new Vector3(4f, 4f, 4f);
 
         //Also move spikes based on size
-        setSpikes();
+        if(complex)
+            setSpikes();
 
         if (qualityChange < 0.1f && quality > 1) quality -= 1;
         else if (qualityChange > 0.9f && quality < 5) quality += 1;
