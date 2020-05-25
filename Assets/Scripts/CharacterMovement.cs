@@ -122,9 +122,21 @@ public class CharacterMovement : MonoBehaviour
 
                 if (Vector3.Distance(gameObject.transform.position, target.transform.position) <= transform.localScale.x/2)
                 {
-                    gameObject.GetComponent<SphereCollider>().enabled = false;
-                    gameObject.GetComponent<SphereCollider>().enabled = true;
-                    target.Translate(new Vector3(0, 0, 0));
+                    //gameObject.GetComponent<SphereCollider>().enabled = false;
+                    //gameObject.GetComponent<SphereCollider>().enabled = true;
+                    //target.Translate(new Vector3(0, 0, 0));
+
+                    //Both regular case and desperate case assigned here
+
+                    //other.GetComponentInParent<CharacterMovement>().foodCollected += 0.2f * quality;
+                    //other.GetComponentInParent<CharacterMovement>().energy += 100f * quality;
+
+                    foodCollected += 0.2f * quality;
+                    energy += 100f * quality;
+
+                    parentController.foodList.Remove(target.gameObject);
+                    Destroy(target.gameObject);
+
                 }
                     
                 else
@@ -145,6 +157,8 @@ public class CharacterMovement : MonoBehaviour
         //Check if food inside?
         
     }
+
+
 
     public void StopCharacter()
     {

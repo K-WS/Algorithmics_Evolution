@@ -54,7 +54,7 @@ public class Food : MonoBehaviour
         }
     }
 
-    private void OnTriggerEnter(Collider other)
+    /*private void OnTriggerEnter(Collider other)
     {
         
         //Both regular case and desperate case assigned here
@@ -66,7 +66,7 @@ public class Food : MonoBehaviour
             parentController.foodList.Remove(gameObject);
             Destroy(gameObject);
         }
-    }
+    }*/
 
     public void RemoveOccupier()
     {
