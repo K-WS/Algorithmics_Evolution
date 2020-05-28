@@ -21,11 +21,6 @@ public class CharStat : MonoBehaviour
             color = go.GetComponent<MeshRenderer>().materials[0].color;
         else
         {
-            /*gameObject.transform.Find("Dinosaur").GetComponent<SkinnedMeshRenderer>().materials[1].color = new Color(
-                                                                        0.1f * speed,
-                                                                        0.25f * transform.localScale.x,
-                                                                        0.2f * quality,
-                                                                        1f);*/
             color = go.transform.Find("Dinosaur").GetComponent<SkinnedMeshRenderer>().materials[1].color;
         }
         GetComponent<MeshRenderer>().materials[0].color = color;

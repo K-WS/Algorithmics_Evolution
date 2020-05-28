@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 
 public class CharacterMovement : MonoBehaviour
 {
@@ -45,7 +46,6 @@ public class CharacterMovement : MonoBehaviour
 
     public float Remap(float value, float from1, float to1, float from2, float to2)
     {
-        //Debug.Log((value - from1) / (to1 - from1) * (to2 - from2) + from2);
         return (value - from1) / (to1 - from1) * (to2 - from2) + from2;
     }
 
@@ -116,25 +116,16 @@ public class CharacterMovement : MonoBehaviour
                 float step = Time.deltaTime * speed;
 
                 //Assign target to move towards and Rotate the "forward" vector towards the target direction
-                //Vector3 targetDirection = target.position - transform.position;
                 Vector3 targetDirection = new Vector3(target.position.x, transform.position.y, target.position.z) - new Vector3(transform.position.x, transform.position.y, transform.position.z);
                 Vector3 rotDirection = Vector3.RotateTowards(transform.forward, targetDirection, 360f, 0.0f);
 
                 if (Vector3.Distance(gameObject.transform.position, target.transform.position) <= transform.localScale.x/2)
                 {
-                    //gameObject.GetComponent<SphereCollider>().enabled = false;
-                    //gameObject.GetComponent<SphereCollider>().enabled = true;
-                    //target.Translate(new Vector3(0, 0, 0));
 
-                    //Both regular case and desperate case assigned here
+                    foodCollected += 0.2f * target.GetComponent<Food>().GetQuality();
+                    energy += 100f * target.GetComponent<Food>().GetQuality();
 
-                    //other.GetComponentInParent<CharacterMovement>().foodCollected += 0.2f * quality;
-                    //other.GetComponentInParent<CharacterMovement>().energy += 100f * quality;
-
-                    foodCollected += 0.2f * quality;
-                    energy += 100f * quality;
-
-                    parentController.foodList.Remove(target.gameObject);
+                    parentController.foodList.Remove(target.GetComponent<Food>().GetID());
                     Destroy(target.gameObject);
 
                 }
@@ -153,9 +144,6 @@ public class CharacterMovement : MonoBehaviour
                 }
             }
         }
-
-        //Check if food inside?
-        
     }
 
 
@@ -232,8 +220,11 @@ public class CharacterMovement : MonoBehaviour
 
 
             //Go through every food to determine best choice
-            foreach (GameObject go in parentController.foodList)
+            //foreach (GameObject go in parentController.foodList)
+            foreach (KeyValuePair<int, GameObject> entry in parentController.foodList)
             {
+                GameObject go = entry.Value;
+
                 //Get distance between animal and food
                 float dist = Vector3.Distance(currentPos, go.transform.position);
 

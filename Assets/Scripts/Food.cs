@@ -8,6 +8,8 @@ public class Food : MonoBehaviour
     private int quality;
     private GameObject occupier;
 
+    private int ID; //For the Dictionary system
+
     void Start()
     {
         parentController = GetComponentInParent<GameController>();
@@ -54,20 +56,6 @@ public class Food : MonoBehaviour
         }
     }
 
-    /*private void OnTriggerEnter(Collider other)
-    {
-        
-        //Both regular case and desperate case assigned here
-        if (other.gameObject.CompareTag("Player") && parentController != null && (other.gameObject == occupier || other.GetComponent<CharacterMovement>().desperate == true))
-        {
-            other.GetComponentInParent<CharacterMovement>().foodCollected += 0.2f*quality;
-            other.GetComponentInParent<CharacterMovement>().energy += 100f * quality;
-
-            parentController.foodList.Remove(gameObject);
-            Destroy(gameObject);
-        }
-    }*/
-
     public void RemoveOccupier()
     {
         occupier = null;
@@ -86,5 +74,14 @@ public class Food : MonoBehaviour
     public int GetQuality()
     {
         return quality;
+    }
+    public void SetID(int num)
+    {
+        ID = num;
+    }
+
+    public int GetID()
+    {
+        return ID;
     }
 }

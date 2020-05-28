@@ -7,7 +7,7 @@ public class GameController : MonoBehaviour, Observer
 {
     //Food info
     public GameObject food;
-    public List<GameObject> foodList = new List<GameObject>();
+    public Dictionary<int, GameObject> foodList = new Dictionary<int, GameObject>();
     private int foodCount = 40; //Starting food count, but used whenever new food created
 
     //Character related Prefabs
@@ -312,9 +312,12 @@ public class GameController : MonoBehaviour, Observer
     //Method to delete all food currently on the field
     private void DestroyFood()
     {
-        foreach (GameObject go in foodList)
-            Destroy(go);  //Destroy leftover food gameobjects
-        foodList.Clear(); //Empties all leftover food references in the list.
+        //Dictionary variation
+        foreach (KeyValuePair<int, GameObject> entry in foodList)
+            Destroy(entry.Value);
+        foodList.Clear();
+
+
     }
 
     //Method that, instead of resetting and creating food, only adds a smaller amount
@@ -328,7 +331,9 @@ public class GameController : MonoBehaviour, Observer
                                             new Vector3(area.x, 0.5f, area.y),
                                             Quaternion.identity);
             prefab.transform.parent = this.transform;
-            foodList.Add(prefab);
+            prefab.GetComponent<Food>().SetID(i);
+
+            foodList[i] = prefab; //Dictionary version
         }
         //DetectFood();
     }
