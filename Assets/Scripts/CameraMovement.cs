@@ -14,8 +14,8 @@ public class CameraMovement : MonoBehaviour
     private float zoomSpeed = 10f;
     private float dragSpeed = 50f;
 
-    private float yaw = 0f;
-    private float pitch = 0f;
+    private float yaw = -90f;
+    private float pitch = 10f;
 
     void Update()
     {
