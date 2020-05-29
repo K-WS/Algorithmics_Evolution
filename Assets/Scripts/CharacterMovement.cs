@@ -16,7 +16,7 @@ public class CharacterMovement : MonoBehaviour
                          //Stat 3 is object scale, affects energy consumption scale**3
 
     private float oldSpeed;
-    private float oldQuality;
+    private int oldQuality;
     private float oldSize;
 
     private float speedBias;
@@ -83,7 +83,7 @@ public class CharacterMovement : MonoBehaviour
         sizeBias = 0f;
 
         oldSpeed = Mathf.Infinity;
-        oldQuality = Mathf.Infinity;
+        oldQuality = 7;
         oldSize = Mathf.Infinity;
 }
 
@@ -453,10 +453,39 @@ public class CharacterMovement : MonoBehaviour
 
     public void SetStats(float speed, float size, int quality, float energy)
     {
+        if (speed > 10)
+            speed = 10;
+        if (speed < 1)
+            speed = 1;
         this.speed = speed;
+
+        if (size > 4)
+            size = 4;
+        if (size < 1)
+            size = 1;
         transform.localScale = new Vector3(size, size, size);
+
+        if (quality > 5)
+            quality = 5;
+        if (quality < 1)
+            quality = 1;
         this.quality = quality;
         this.startEnergy = energy;
         this.energy = energy;
+    }
+
+    public float GetSpeed()
+    {
+        return speed;
+    }
+
+    public float GetSize()
+    {
+        return transform.localScale.x;
+    }
+
+    public int GetQuality()
+    {
+        return quality;
     }
 }

@@ -23,6 +23,7 @@ public class GameController : MonoBehaviour, Observer
     private float startingSize;
     private int startingQuality;
     private float startingEnergy;
+    private float startingRandom;
 
 
     //Life cycle info
@@ -42,6 +43,7 @@ public class GameController : MonoBehaviour, Observer
     public Slider startSpeedText;
     public Slider startSizeText;
     public Slider startQualityText;
+    public Slider startRandomText;
 
     public Text modelText;
     public Button simpleButton;
@@ -121,6 +123,7 @@ public class GameController : MonoBehaviour, Observer
         startingSize = startSizeText.value;
         startingQuality = (int) startQualityText.value;
         startingEnergy = int.Parse(StartEnergyText.text);
+        startingRandom = startRandomText.value;
 
         reset = true;
         startButton.gameObject.SetActive(false);
@@ -170,6 +173,7 @@ public class GameController : MonoBehaviour, Observer
     /*-------------------------------------------------------*/
 
     //Method to create a new character
+    //Is affected by the randomness value
     private void CreateCharacter()
     {
         GameObject prefab;
@@ -177,9 +181,17 @@ public class GameController : MonoBehaviour, Observer
             prefab = Instantiate(character);
         else
             prefab = Instantiate(character2);
+
+        float rndSpeed = startingRandom / 10;
+        float rndSize = startingRandom / 25;
+        int rndQuality = (int) System.Math.Round(startingRandom / 20, 0);
+
         prefab.GetComponent<CharacterMovement>().complex = complexModel;
         //float speed, float size, int quality, float energy
-        prefab.GetComponent<CharacterMovement>().SetStats(startingSpeed, startingSize, startingQuality, startingEnergy);
+        prefab.GetComponent<CharacterMovement>().SetStats(startingSpeed + Random.Range(-rndSpeed, rndSpeed),
+                                                          startingSize + Random.Range(-rndSize, rndSize), 
+                                                          startingQuality + Random.Range(-rndQuality, rndQuality), 
+                                                          startingEnergy);
         prefab.GetComponent<CharacterMovement>().sub.AddObserver(this);
         RepositionCharacter(prefab);
 
@@ -193,12 +205,17 @@ public class GameController : MonoBehaviour, Observer
         prefab.GetComponent<CharacterMovement>().statter.GetComponent<CharStat>().Realign(prefab, complexModel);
     }
 
-    //Method to use a preset character to make a new character from
+    // Method to use a preset character to make a new character from
+    // is not affected by the randomizer.
     private GameObject CreateCharacter(GameObject go)
     {
         GameObject newGO = Instantiate(go);
         newGO.GetComponent<CharacterMovement>().complex = complexModel;
-        newGO.GetComponent<CharacterMovement>().SetStats(startingSpeed, startingSize, startingQuality, startingEnergy);
+        newGO.GetComponent<CharacterMovement>().SetStats(
+            go.GetComponent<CharacterMovement>().GetSpeed(),
+            go.GetComponent<CharacterMovement>().GetSize(),
+            go.GetComponent<CharacterMovement>().GetQuality(), 
+            startingEnergy);
         newGO.GetComponent<CharacterMovement>().sub.AddObserver(this);
         RepositionCharacter(newGO);
 
